@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DOCTOR
+  PACIENTE
+}
+
+enum Genero {
+  MASCULINO
+  FEMENINO
+  OTRO
+}
+
+model User {
+  id                              String    @id @default(cuid())
+  Rut                             String    @unique
+  nombre                          String
+  apellido                        String
+  email                          String    @unique
+  password_hash                  String?
+  telefono                       String
+  direccion                      String?
+  fecha_nacimiento               DateTime
+  especialidad                   String?
+  genero                         Genero?
+  descripcion_profesional        String?   @db.Text
+  calificacion_promedio          Decimal?  @db.Decimal(3, 2) // Permite valores como 4.75
+  prevision_salud                String?
+  antecedentes_medicos           String?   @db.Text
+  latitud                        Decimal?  @db.Decimal(10, 8)
+  longitud                       Decimal?  @db.Decimal(11, 8)
+  ultima_actualizacion_ubicacion DateTime?
+  role                           Role      @default(PACIENTE)
+  
+  // Timestamps automáticos
+  createdAt                      DateTime  @default(now())
+  updatedAt                      DateTime  @updatedAt
+  citasComoPaciente                          Cita[] @relation("citasPaciente")
+  citasComoDoctor                           Cita[] @relation("citasDoctor")
+  @@map("users")
+}
+
+model Cita {
+  id     String @id @default(cuid())
+  fecha  DateTime
+  horaInicio String
+  horaFin   String
+
+  doctorId String
+  doctor   User   @relation("citasDoctor", fields: [doctorId], references: [id])
+
+  pacienteId String?
+  paciente   User?  @relation("citasPaciente", fields: [pacienteId], references: [id])
+
+  estado  String   @default("DISPONIBLE")
+  @@unique([doctorId, fecha, horaInicio], name: "unique_cita_for_user")
+
+}

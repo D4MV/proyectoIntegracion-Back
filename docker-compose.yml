@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: nestjs-integracion-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nestjs_integracion_db
+      POSTGRES_USER: nestjs_user
+      POSTGRES_PASSWORD: nestjs_password_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - nestjs_integracion_postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - nestjs-integracion-network
+
+  # Opcional: pgAdmin para administrar la base de datos
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nestjs-integracion-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nestjs.com
+      PGADMIN_DEFAULT_PASSWORD: nestjs_admin_2024
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+    networks:
+      - nestjs-integracion-network
+
+volumes:
+  nestjs_integracion_postgres_data:
+
+networks:
+  nestjs-integracion-network:
+    driver: bridge
