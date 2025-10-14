@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegistroDocDTO } from './DTO/registroDoc';
 import * as bcrypt from 'bcrypt';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class DoctorService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService, private emailService: EmailService) {}
 
     async register(registroDocDTO: RegistroDocDTO) {
         const { 
@@ -42,6 +43,12 @@ export class DoctorService {
                     role: 'DOCTOR' 
                 }
             });
+
+            await this.emailService.enviarEmailBienvenida({
+                nombre:nuevoDoctor.nombre,
+                apellido:nuevoDoctor.apellido,
+                email:nuevoDoctor.email
+            })
             
             return nuevoDoctor;
         } catch (error) {
