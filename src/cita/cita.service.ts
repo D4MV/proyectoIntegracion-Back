@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CrearDisponibilidadDto } from './DTO/crearCita';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class CitaService {
-    constructor(private prisma: PrismaService){}
+    constructor(private prisma: PrismaService, private emailService: EmailService) {}
 
     async crearDisponibilidad(crearDisponibilidadDto: CrearDisponibilidadDto){
 
@@ -55,22 +56,80 @@ export class CitaService {
             where: { id: pacienteId }
         });
 
+        const buscarCita = await this.prisma.cita.findUnique({
+            where: { id: citaId }
+        })
+
+        if(!buscarCita) {
+            throw new Error('La cita no existe');
+        }
+
+        const doctor = await this.prisma.user.findUnique({
+            where: { id: buscarCita.doctorId}
+        })
+
         if(!paciente || paciente.role !== "PACIENTE") {
             throw new Error('Sólo los pacientes pueden reservar citas');
         }
 
+        if(!doctor || doctor.role !== "DOCTOR") {
+            throw new Error('La cita debe estar asociada a un doctor válido');
+        }
+
         const cita = await this.prisma.cita.findUnique({
-            where: { id: citaId }
+            where: { id: citaId },
+            include: { doctor: true, paciente: true }
         });
 
         if(!cita || cita.estado !== 'DISPONIBLE') {
             throw new Error('La cita no está disponible para ser reservada');
         }
 
-        return this.prisma.cita.update({
+        const citaActualizada = this.prisma.cita.update({
             where: { id: citaId },
-            data: { estado: 'RESERVADA', pacienteId: pacienteId }
+            data: { estado: 'RESERVADA', pacienteId: pacienteId },
+            include:{ doctor:true, paciente:true }
         })
+
+        const datosDoctor = {
+            nombre: doctor.nombre,
+            apellido: doctor.apellido,
+            email: doctor.email,
+        }
+
+        const datosPaciente = {
+            nombre: paciente.nombre,
+            apellido: paciente.apellido,
+            email: paciente.email,
+        }
+
+        const fechaFormateada = new Date(cita.fecha)
+            .toLocaleString('es-CL', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
+
+
+        const datosCita = {
+            fecha: cita.fecha,
+            fechaFormateada: fechaFormateada,
+            horaInicio: cita.horaInicio,
+            horaFin: cita.horaFin,
+        }
+
+        try {
+            await this.emailService.enviarConfirmacionCita(
+                datosPaciente,
+                datosDoctor,
+                datosCita
+            );
+        return citaActualizada;
+        } catch (error) {
+            throw new Error('Error al enviar el email de confirmación: ' + error.message
+            )
+        }
     }
 
 }
