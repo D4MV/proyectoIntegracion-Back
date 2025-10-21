@@ -8,14 +8,22 @@ export class PacienteService {
 
 
     async register(RegistroPacDTO: RegistroPacDTO) {
-        const { nombre, Rut, apellido, email, telefono, direccion, fecha_nacimiento, latitud, longitud } = RegistroPacDTO;
+        const { nombre, Rut, apellido, email, telefono, direccion, fecha_nacimiento } = RegistroPacDTO;
 
         const existePaciente = await this.prisma.user.findUnique({
-            where:{ Rut }
+            where:{ Rut: Rut }
         });
 
         if(existePaciente) {
             throw new Error('El paciente ya existe');
+        }
+
+        const existeEmail = await this.prisma.user.findUnique({
+            where: { email: email }
+        });
+
+        if (existeEmail) {
+            throw new Error('El email ya está en uso');
         }
 
         try {
@@ -28,8 +36,7 @@ export class PacienteService {
                     telefono,
                     direccion,
                     fecha_nacimiento,
-                    longitud: longitud,
-                    latitud: latitud
+                    role: 'PACIENTE'
                 }
             })
 
@@ -41,7 +48,7 @@ export class PacienteService {
 
     async getPaciente(Rut: string) {
         const paciente = await this.prisma.user.findUnique({
-            where: { Rut }
+            where: { Rut: Rut }
         });
 
         if (!paciente) {

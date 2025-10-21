@@ -129,4 +129,56 @@ export class EmailService {
         }
     }
 
+    async notificacionCancelacionCita(paciente:Paciente, doctor:Doctor, cita:CitaReservada): Promise<boolean>{
+        const mensajePaciente = {
+            to: paciente.email,
+            from: this.configService.get<string>('EMAIL_FROM') || 'diego.moragavaldes2002@gmail.com',
+            subject: 'Cancelación de Cita Médica',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                    <h1 style="color: #e74c3c; text-align: center;">Cita Cancelada</h1>
+
+                    <p>Hola ${paciente.nombre} ${paciente.apellido},</p>
+
+                    <p>Tu cita médica ha sido cancelada. Si tienes alguna pregunta o deseas reprogramar, no dudes en que puedes tomar otra hora.</p>
+
+                    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <p style="color: #777; font-size: 12px;">Este es un mensaje automático, por favor no respondas a este correo.</p>
+                    </div>
+                </div>
+            `,
+        };
+
+        const mensajeDoctor = {
+            to: doctor.email,
+            from: this.configService.get<string>('EMAIL_FROM') || 'diego.moragavaldes2002@gmail.com',
+            subject: 'Cancelación de Cita Médica',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                    <h1 style="color: #e74c3c; text-align: center;">Cita Cancelada</h1>
+
+                    <p>Hola Dr. ${doctor.nombre} ${doctor.apellido},</p>
+
+                    <p>La cita médica del paciente ${paciente.nombre} ${paciente.apellido} ha sido cancelada.</p>
+
+                    <p>Esta hora estaba reservada para el ${cita.fecha} de ${cita.horaInicio} a ${cita.horaFin}.</p>
+                    <p>Para su tranquilidad, automáticamente la cita ha sido liberada en el sistema.</p>
+
+                    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <p style="color: #777; font-size: 12px;">Este es un mensaje automático, por favor no respondas a este correo.</p>
+                    </div>
+                </div>
+            `,
+        };
+
+        try {
+            await this.sgMail.send(mensajePaciente);
+            await this.sgMail.send(mensajeDoctor);
+            return true;
+        } catch (error) {
+            console.error('Error al enviar email:', error);
+            return false;
+        }
+    }
+
 }

@@ -98,4 +98,38 @@ export class DoctorService {
             }
         });
     }
+
+
+    async updateDoctor(doctorId: string, updateData: Partial<RegistroDocDTO>) {
+        if (!updateData || Object.keys(updateData).length === 0) {
+            throw new Error('No se proporcionaron datos para actualizar');
+        }
+
+        const camposPermitidos = [
+            'nombre', 'apellido', 'email', 'telefono', 'direccion', 
+            'fecha_nacimiento', 'latitud', 'longitud', 'especialidad', 
+            'descripcion_profesional', 'prevision_salud'
+        ];
+
+        const camposInvalidos = Object.keys(updateData).filter(
+            campo => !camposPermitidos.includes(campo)
+        );
+
+        if (camposInvalidos.length > 0) {
+            throw new Error('Campos inválidos: ' + camposInvalidos.join(', '));
+        }
+
+        try {
+            const nuevoDoctor = await this.prisma.user.update({
+                where: { id: doctorId },
+                data: updateData
+            })
+
+        return nuevoDoctor;
+
+        }catch (error) {
+            console.error('Error al actualizar el doctor:', error);
+            throw new Error('No se pudo actualizar el doctor. Verifica los datos proporcionados.');}
+
+    }
 }

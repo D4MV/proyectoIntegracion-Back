@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CrearDisponibilidadDto } from './DTO/crearCita';
 import { EmailService } from 'src/email/email.service';
+import { PrismaClientUnknownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class CitaService {
@@ -126,6 +127,79 @@ export class CitaService {
                 datosCita
             );
         return citaActualizada;
+        } catch (error) {
+            throw new Error('Error al enviar el email de confirmación: ' + error.message
+            )
+        }
+    }
+
+    async obtenerCitasPorDoctor(doctorEmail: string) {
+        const citas = await this.prisma.cita.findMany({
+            where: { doctor: { email: doctorEmail }, estado: 'RESERVADA' },
+            include: {
+                paciente: true
+            }
+        });
+
+        if(!citas) {
+            throw new Error('No se encontraron citas para este doctor');
+        }
+
+        return citas;
+    }
+
+    async obtenerCitasPorPaciente(pacienteRut: string) {
+        const citas = await this.prisma.cita.findMany({
+            where: { paciente: { Rut: pacienteRut }, estado: 'RESERVADA' },
+            include: { doctor: true }
+        });
+
+        if(!citas) {
+            throw new Error('Paciente no encontrado');
+        }
+
+        return citas;
+    }
+
+    async cancelarCita(citaId: string) {
+        if(!citaId) {
+            throw new Error('El ID de la cita es obligatorio para cancelar');
+        }
+        const cita = await this.prisma.cita.update({
+            where: { id: citaId },
+            data: { estado: 'DISPONIBLE' },
+            include: { doctor: true, paciente: true }
+        })
+
+        const datosDoctor = {
+            nombre: cita.doctor.nombre,
+            apellido: cita.doctor.apellido,
+            email: cita.doctor.email,
+        }
+
+        if(!cita.paciente) {
+            throw new Error('La cita no tiene un paciente asociado');
+        }
+
+        const datosPaciente = {
+            nombre: cita.paciente.nombre,
+            apellido: cita.paciente.apellido,
+            email: cita.paciente.email,
+        }
+
+        const datosCita = {
+            fecha: cita.fecha,
+            horaInicio: cita.horaInicio,
+            horaFin: cita.horaFin,
+        }
+
+        try {
+            await this.emailService.notificacionCancelacionCita(
+                datosPaciente,
+                datosDoctor,
+                datosCita
+            );
+        return cita;
         } catch (error) {
             throw new Error('Error al enviar el email de confirmación: ' + error.message
             )

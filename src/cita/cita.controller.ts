@@ -29,4 +29,23 @@ export class CitaController {
  ) {
     return this.citaService.reservarCita(citaId, pacienteId);
  }
+
+ @Put('cancelar/:citaId')
+ async cancelarCita(
+   @Param('citaId') citaId: string
+ ) {
+   return this.citaService.cancelarCita(citaId);
+ }
+
+
+ @Get('doctor/:doctorEmail')
+    async getCitasPorDoctor(@Param('doctorEmail') doctorEmail: string) {
+        return this.citaService.obtenerCitasPorDoctor(doctorEmail);
+    }
+
+ @Get('paciente/:pacienteRut')   
+ async getCitasPorPaciente(@Param('pacienteRut') pacienteRut: string) {
+     return this.citaService.obtenerCitasPorPaciente(pacienteRut);
+ }
+
 }

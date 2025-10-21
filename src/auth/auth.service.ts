@@ -10,7 +10,7 @@ export class AuthService {
     constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
     async loginDoctor(loginDto:LoginDto, res:Response){
-        const {email, password} = loginDto;
+        const { email, password } = loginDto;
 
         const user = await this.prisma.user.findUnique({
             where: {

@@ -28,10 +28,4 @@ export class RegistroPacDTO {
     @IsDateString()
     @IsNotEmpty()
     fecha_nacimiento: Date;
-
-    @IsNotEmpty()
-    latitud: number;
-
-    @IsNotEmpty()
-    longitud: number;
 }

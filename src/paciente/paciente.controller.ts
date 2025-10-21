@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { PacienteService } from './paciente.service';
 import { RegistroPacDTO } from './DTO/registropac';
 
@@ -11,5 +11,12 @@ export class PacienteController {
     @Body() registroPacDTO: RegistroPacDTO
   ){
     return this.pacienteService.register(registroPacDTO);
+  }
+
+  @Get('/Rut/:Rut')
+  getPaciente(
+    @Param('Rut') Rut: string
+  ){
+    return this.pacienteService.getPaciente(Rut);
   }
 }
